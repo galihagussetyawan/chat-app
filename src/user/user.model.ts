@@ -6,10 +6,10 @@ export class User extends Document {
   @Prop()
   username: string;
 
-  @Prop({ name: 'first_name' })
+  @Prop()
   firstName: string;
 
-  @Prop({ name: 'last_name' })
+  @Prop()
   lastName: string;
 
   @Prop()
@@ -17,6 +17,12 @@ export class User extends Document {
 
   @Prop()
   password: string;
+
+  @Prop()
+  createdAt: Date;
+
+  @Prop()
+  updatedAt: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
