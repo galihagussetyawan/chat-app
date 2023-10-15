@@ -18,7 +18,7 @@ interface Event<T> {
   data: T;
 }
 
-interface EventMessage {
+export interface EventMessage {
   id: string;
   type: string;
   to: string;
@@ -82,15 +82,19 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: EventJoin,
   ) {
     //dummy user data
-    await this.roomService.addUserToRoom(payload.roomId, payload.type, {
-      userId: client.user,
-      socketId: client.id,
-    });
-    await this.server.in(client.id).socketsJoin(payload.roomId);
+    const resRoom = await this.roomService.addUserToRoom(
+      payload.roomId,
+      payload.type,
+      {
+        userId: client.user,
+        socketId: client.id,
+      },
+    );
+    await this.server.in(client.id).socketsJoin(await resRoom?.id);
 
     // broadcast notify when user join to the group
     await client.broadcast
-      .to(payload.roomId)
+      .to(await resRoom?.id)
       .emit('message', client.id + ' has join the group');
   }
 }
