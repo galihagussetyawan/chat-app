@@ -9,6 +9,7 @@ import { RoomModule } from './room/room.module';
 import { AppGateway } from './app.gateway';
 import { RoomService } from './room/room.service';
 import { JwtService } from '@nestjs/jwt';
+import { MessageModule } from './message/message.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { JwtService } from '@nestjs/jwt';
     UserModule,
     AuthModule,
     RoomModule,
+    MessageModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppGateway, RoomService, JwtService],
