@@ -12,6 +12,7 @@ import { RoomService } from './room/room.service';
 import { UseGuards } from '@nestjs/common';
 import { WebsocketAuthGuard } from './auth/websocket.guard';
 import { JwtService } from '@nestjs/jwt';
+import { MessageService } from './message/message.service';
 
 interface Event<T> {
   roomId: string;
@@ -38,6 +39,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private readonly roomService: RoomService,
     private readonly jwtService: JwtService,
+    private readonly messageService: MessageService,
   ) {}
   @WebSocketServer() server: Server;
 
@@ -69,10 +71,18 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('message')
   @UseGuards(WebsocketAuthGuard)
   async handleMessageEvent(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
     @MessageBody() payload: Event<EventMessage>,
   ) {
-    client.broadcast.to(payload.roomId).emit('message', payload);
+    payload.data.from = client.user;
+    payload.data.timestamp = new Date();
+
+    const resMessage = await this.messageService.saveMessage(
+      payload.roomId,
+      payload.data,
+    );
+
+    client.broadcast.to(payload.roomId).emit('message', resMessage);
   }
 
   @SubscribeMessage('join')
