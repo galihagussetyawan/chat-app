@@ -13,5 +13,7 @@ export class SessionService {
   async createSession(user: User) {
     const session = new this.sessionModel({ user });
     await session.save();
+    user.session = session.id;
+    await user.save();
   }
 }
