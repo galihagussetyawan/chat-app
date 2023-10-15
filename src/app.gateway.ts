@@ -1,12 +1,17 @@
 import {
   ConnectedSocket,
   MessageBody,
+  OnGatewayConnection,
+  OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { RoomService } from './room/room.service';
+import { UseGuards } from '@nestjs/common';
+import { WebsocketAuthGuard } from './auth/websocket.guard';
+import { JwtService } from '@nestjs/jwt';
 
 interface Event<T> {
   roomId: string;
@@ -27,12 +32,41 @@ interface EventJoin {
 }
 
 @WebSocketGateway()
-export class AppGateway {
-  constructor(private readonly roomService: RoomService) {}
-
+@UseGuards(WebsocketAuthGuard)
+export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  constructor(
+    private readonly roomService: RoomService,
+    private readonly jwtService: JwtService,
+  ) {}
   @WebSocketServer() server: Server;
 
+  async handleConnection(client: Socket) {
+    // prevent connection without access token
+    try {
+      const token = client?.handshake?.headers?.access_token as string;
+      if (!token) {
+        client.disconnect();
+      }
+
+      const payload = await this.jwtService.verify(token, {
+        secret: process.env.JWT_SECRET_TOKEN,
+      });
+
+      if (!payload) {
+        client.disconnect();
+      }
+    } catch (error) {
+      client.disconnect();
+    }
+  }
+
+  handleDisconnect(client: Socket) {
+    // throw new Error('Method not implemented.');
+    console.log('Disconnected ' + client.id);
+  }
+
   @SubscribeMessage('message')
+  @UseGuards(WebsocketAuthGuard)
   async handleMessageEvent(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: Event<EventMessage>,
@@ -41,13 +75,14 @@ export class AppGateway {
   }
 
   @SubscribeMessage('join')
+  @UseGuards(WebsocketAuthGuard)
   async joinRoom(
-    @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: any,
     @MessageBody() payload: EventJoin,
   ) {
     //dummy user data
     await this.roomService.addUserToRoom(payload.roomId, {
-      userId: 'asdasd',
+      userId: client.user,
       socketId: client.id,
     });
     await this.server.in(client.id).socketsJoin(payload.roomId);

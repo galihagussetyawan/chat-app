@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { RoomModule } from './room/room.module';
 import { AppGateway } from './app.gateway';
 import { RoomService } from './room/room.service';
+import { JwtService } from '@nestjs/jwt';
 
 @Module({
   imports: [
@@ -21,6 +22,6 @@ import { RoomService } from './room/room.service';
     RoomModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AppGateway, RoomService],
+  providers: [AppService, AppGateway, RoomService, JwtService],
 })
 export class AppModule {}
