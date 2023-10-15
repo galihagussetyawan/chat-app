@@ -5,6 +5,9 @@ import { User } from 'src/user/user.model';
 
 @Schema()
 export class Room extends Document {
+  @Prop({ unique: true })
+  name: string;
+
   // The type here defines whether the room is a group message or a private message
   @Prop()
   type: string;

@@ -14,5 +14,6 @@ import { Message, MessageSchema } from 'src/message/message.model';
     ]),
   ],
   providers: [RoomService],
+  exports: [MongooseModule],
 })
 export class RoomModule {}

@@ -29,6 +29,7 @@ interface EventMessage {
 
 interface EventJoin {
   roomId: string;
+  type: string;
 }
 
 @WebSocketGateway()
@@ -81,7 +82,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: EventJoin,
   ) {
     //dummy user data
-    await this.roomService.addUserToRoom(payload.roomId, {
+    await this.roomService.addUserToRoom(payload.roomId, payload.type, {
       userId: client.user,
       socketId: client.id,
     });
