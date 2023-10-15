@@ -7,7 +7,7 @@ export class Message extends Document {
   @Prop({ type: User })
   to: User;
 
-  @Prop({ type: Types.ObjectId, ref: 'User' })
+  @Prop({ type: Types.ObjectId, ref: User.name })
   from: User;
 
   @Prop()
