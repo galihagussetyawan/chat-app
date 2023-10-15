@@ -9,6 +9,7 @@ import { Room } from 'src/room/room.model';
 export class SessionService {
   constructor(
     @InjectModel(Session.name) private sessionModel: Model<Session>,
+    @InjectModel(User.name) private userModel: Model<User>,
   ) {}
 
   async createSession(user: User) {
@@ -29,5 +30,15 @@ export class SessionService {
     }
 
     await session.save();
+  }
+
+  async getRoomSessionByUserId(userId: string): Promise<string[]> {
+    const user = await this.userModel.findById(userId);
+    const session = await this.sessionModel
+      .findById(user.session)
+      .populate('room');
+
+    const mapping = session.room.flatMap((v) => v.id);
+    return mapping;
   }
 }

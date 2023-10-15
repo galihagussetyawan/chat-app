@@ -13,6 +13,7 @@ import { UseGuards } from '@nestjs/common';
 import { WebsocketAuthGuard } from './auth/websocket.guard';
 import { JwtService } from '@nestjs/jwt';
 import { MessageService } from './message/message.service';
+import { SessionService } from './session/session.service';
 
 interface Event<T> {
   roomId: string;
@@ -24,8 +25,8 @@ export interface EventMessage {
   type: string;
   to: string;
   from: string;
-  timestamp: Date;
-  body: string;
+  createdAt: Date;
+  content: string;
 }
 
 interface EventJoin {
@@ -40,6 +41,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private readonly roomService: RoomService,
     private readonly jwtService: JwtService,
     private readonly messageService: MessageService,
+    private readonly sessionService: SessionService,
   ) {}
   @WebSocketServer() server: Server;
 
@@ -58,6 +60,22 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (!payload) {
         client.disconnect();
       }
+
+      // handle auto join when first connecting
+      const rooms = await this.sessionService.getRoomSessionByUserId(
+        payload.sub,
+      );
+
+      // handle view past messages when they join a chat room.
+      rooms.forEach(async (v) => {
+        client.join(v);
+
+        const messages = await this.messageService.getMessagesByRoomId(v);
+
+        messages.forEach((msg) => {
+          client.emit('message', { roomId: v, data: msg });
+        });
+      });
     } catch (error) {
       client.disconnect();
     }
@@ -75,13 +93,14 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() payload: Event<EventMessage>,
   ) {
     payload.data.from = client.user;
-    payload.data.timestamp = new Date();
+    payload.data.createdAt = new Date();
 
     const resMessage = await this.messageService.saveMessage(
       payload.roomId,
       payload.data,
     );
 
+    client.emit('message', resMessage);
     client.broadcast.to(payload.roomId).emit('message', resMessage);
   }
 
