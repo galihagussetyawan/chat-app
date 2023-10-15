@@ -1,8 +1,9 @@
-import { Module, Session } from '@nestjs/common';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { SessionSchema } from './session.model';
+import { Session, SessionSchema } from './session.model';
 import { User, UserSchema } from 'src/user/user.model';
 import { Room, RoomSchema } from 'src/room/room.model';
+import { SessionService } from './session.service';
 
 @Module({
   imports: [
@@ -12,5 +13,7 @@ import { Room, RoomSchema } from 'src/room/room.model';
       { name: Room.name, schema: RoomSchema },
     ]),
   ],
+  providers: [SessionService],
+  exports: [MongooseModule, SessionService],
 })
 export class SessionModule {}
