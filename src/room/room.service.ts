@@ -4,6 +4,7 @@ import { Room } from './room.model';
 import { Model } from 'mongoose';
 import { User } from 'src/user/user.model';
 import { WsException } from '@nestjs/websockets';
+import { SessionService } from 'src/session/session.service';
 
 interface IUser {
   userId: string;
@@ -15,6 +16,7 @@ export class RoomService {
   constructor(
     @InjectModel(Room.name) private roomModel: Model<Room>,
     @InjectModel(User.name) private userModel: Model<User>,
+    private readonly sessionService: SessionService,
   ) {}
 
   async createRoom(roomName: string, type: string, user: IUser): Promise<Room> {
@@ -30,7 +32,10 @@ export class RoomService {
       createdAt: new Date(),
     });
     await newRoom.participants.push(resUser);
-    return await newRoom.save();
+    await newRoom.save();
+
+    await this.sessionService.addRoomSession(resUser, newRoom);
+    return newRoom;
   }
 
   async addUserToRoom(
@@ -55,6 +60,7 @@ export class RoomService {
         await isExistRoomByName.save();
       }
 
+      await this.sessionService.addRoomSession(resUser, isExistRoomByName);
       return isExistRoomByName;
     } else {
       return await this.createRoom(roomName, type, user);
