@@ -17,7 +17,7 @@ export class RoomService {
     @InjectModel(User.name) private userModel: Model<User>,
   ) {}
 
-  async createRoom(roomName: string, type: string, user: IUser) {
+  async createRoom(roomName: string, type: string, user: IUser): Promise<Room> {
     // get user by id
     const resUser = await this.userModel.findById(user.userId);
     if (!resUser) {
@@ -30,10 +30,14 @@ export class RoomService {
       createdAt: new Date(),
     });
     await newRoom.participants.push(resUser);
-    await newRoom.save();
+    return await newRoom.save();
   }
 
-  async addUserToRoom(roomName: string, type: string, user: IUser) {
+  async addUserToRoom(
+    roomName: string,
+    type: string,
+    user: IUser,
+  ): Promise<Room> {
     const resUser = await this.userModel.findById(user.userId);
     const isExistRoomByName = await this.roomModel
       .findOne({ name: roomName })
@@ -50,8 +54,10 @@ export class RoomService {
         await isExistRoomByName.participants.push(resUser);
         await isExistRoomByName.save();
       }
+
+      return isExistRoomByName;
     } else {
-      await this.createRoom(roomName, type, user);
+      return await this.createRoom(roomName, type, user);
     }
   }
 }

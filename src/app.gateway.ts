@@ -90,11 +90,13 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
         socketId: client.id,
       },
     );
-    await this.server.in(client.id).socketsJoin(await resRoom?.id);
+
+    // join socket client to room
+    await this.server.in(client.id).socketsJoin(resRoom?.id);
 
     // broadcast notify when user join to the group
     await client.broadcast
-      .to(await resRoom?.id)
-      .emit('message', client.id + ' has join the group');
+      .to(resRoom?.id)
+      .emit('message', client.id + ' has join the group: ' + resRoom?.id);
   }
 }
