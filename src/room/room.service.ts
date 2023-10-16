@@ -66,4 +66,43 @@ export class RoomService {
       return await this.createRoom(roomName, type, user);
     }
   }
+
+  async createPrivateRoom(
+    roomId: string,
+    from: string,
+    to: string,
+  ): Promise<string> {
+    if (roomId) {
+      return roomId;
+    } else {
+      const sender = await this.userModel.findById(from);
+      const recipient = await this.userModel.findById(to);
+
+      if (!sender || !recipient) {
+        return;
+      }
+
+      const session = await this.sessionService.getPrivateSession(
+        sender,
+        recipient,
+      );
+
+      if (!session) {
+        const room = new this.roomModel({
+          type: 'private',
+          createdAt: new Date(),
+        });
+        room.participants.push(sender);
+        room.participants.push(recipient);
+        await room.save();
+
+        await this.sessionService.addRoomSession(sender, room);
+        await this.sessionService.addRoomSession(recipient, room);
+
+        return room.id;
+      }
+
+      return session;
+    }
+  }
 }

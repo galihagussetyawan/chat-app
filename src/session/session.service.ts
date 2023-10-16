@@ -41,4 +41,26 @@ export class SessionService {
     const mapping = session.room.flatMap((v) => v.id);
     return mapping;
   }
+
+  async getPrivateSession(sender: User, reciever: User): Promise<string> {
+    const senderSession = await this.sessionModel
+      .findById(sender.session)
+      .populate({
+        path: 'room',
+        match: {
+          type: 'private',
+        },
+        populate: {
+          path: 'participants',
+        },
+      });
+
+    const findSession = senderSession.room.find(
+      (v) =>
+        v.type === 'private' &&
+        v.participants.find((p) => p.id === reciever.id),
+    );
+
+    return findSession.id;
+  }
 }

@@ -17,6 +17,7 @@ import { SessionService } from './session/session.service';
 
 interface Event<T> {
   roomId: string;
+  type: string;
   data: T;
 }
 
@@ -95,13 +96,31 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
     payload.data.from = client.user;
     payload.data.createdAt = new Date();
 
-    const resMessage = await this.messageService.saveMessage(
-      payload.roomId,
-      payload.data,
-    );
+    // private message
+    if (payload.data.to && payload.type === 'private') {
+      const room = await this.roomService.createPrivateRoom(
+        payload.roomId,
+        payload.data.from,
+        payload.data.to,
+      );
 
-    client.emit('message', resMessage);
-    client.broadcast.to(payload.roomId).emit('message', resMessage);
+      const resMessage = await this.messageService.saveMessage(
+        room,
+        payload.data,
+      );
+
+      client.emit('message', resMessage);
+      client.broadcast.to(room).emit('message', resMessage);
+    } else {
+      // group message
+      const resMessage = await this.messageService.saveMessage(
+        payload.roomId,
+        payload.data,
+      );
+
+      client.emit('message', resMessage);
+      client.broadcast.to(payload.roomId).emit('message', resMessage);
+    }
   }
 
   @SubscribeMessage('join')
